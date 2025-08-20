@@ -7,7 +7,7 @@ from app.service_ocr import ocr_from_url
 
 
 def create_app() -> Flask:
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder="static", static_url_path="/static")
     CORS(app, resources={r"/*": {"origins": os.getenv("ALLOWED_ORIGINS", "*")}})
 
     api_key = os.getenv("API_KEY", "")
@@ -18,6 +18,10 @@ def create_app() -> Flask:
     @app.get("/health")
     def health():
         return {"ok": True}
+
+    @app.get("/")
+    def index():
+        return app.send_static_file("index.html")
 
     @app.post("/ocr")
     def ocr():
