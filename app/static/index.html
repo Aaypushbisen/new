@@ -33,6 +33,8 @@
       <h2>OCR → Prefill</h2>
       <label>Public file URL (PDF/JPG/PNG)</label>
       <input id="fileUrl" type="text" placeholder="https://..." />
+      <label>Or upload a file</label>
+      <input id="fileInput" type="file" accept=".pdf,.png,.jpg,.jpeg" />
       <div class="row">
         <div>
           <label>OCR Text</label>
@@ -46,6 +48,7 @@
       <div style="margin-top: 8px; display:flex; gap:8px;">
         <button id="runOcr">Run OCR</button>
         <button id="runPrefill">Run Prefill</button>
+        <button id="startEsign">Start e-Sign</button>
       </div>
       <div style="margin-top: 8px;">
         <label>Prefilled Fields</label>
@@ -90,7 +93,12 @@
       $('runOcr').addEventListener('click', async () => {
         try {
           $('runOcr').disabled = true;
-          const fileUrl = $('fileUrl').value.trim();
+          let fileUrl = $('fileUrl').value.trim();
+          if (!fileUrl && $('fileInput').files && $('fileInput').files[0]) {
+            const uploaded = await uploadFile($('fileInput').files[0]);
+            fileUrl = uploaded.file_url;
+            $('fileUrl').value = fileUrl;
+          }
           const data = await apiCall('/ocr', 'POST', { file_url: fileUrl });
           $('ocrText').value = data.text || '';
         } catch (e) {
@@ -125,6 +133,37 @@
           alert(e.message);
         } finally {
           $('sendChat').disabled = false;
+        }
+      });
+
+      async function uploadFile(file) {
+        const base = $('baseUrl').value.trim() || '';
+        const key = $('apiKey').value.trim();
+        const url = (base || '') + '/upload';
+        const form = new FormData();
+        form.append('file', file);
+        const headers = {};
+        if (key) headers['x-api-key'] = key;
+        const res = await fetch(url, { method: 'POST', headers, body: form });
+        if (!res.ok) throw new Error('Upload failed');
+        return res.json();
+      }
+
+      $('startEsign').addEventListener('click', async () => {
+        try {
+          $('startEsign').disabled = true;
+          const docUrl = $('fileUrl').value.trim();
+          const fields = JSON.parse($('prefillOut').textContent || '{}');
+          const data = await apiCall('/esign/start', 'POST', { document_url: docUrl, fields });
+          if (data.signing_url) {
+            window.open(data.signing_url, '_blank');
+          } else {
+            alert('e-sign not available: ' + (data.error || 'unknown'));
+          }
+        } catch (e) {
+          alert(e.message);
+        } finally {
+          $('startEsign').disabled = false;
         }
       });
 
