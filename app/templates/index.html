@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MP Online Cyber Café - Services</title>
+    <style>
+      body { font-family: system-ui, Arial, sans-serif; margin: 24px; line-height: 1.4; }
+      h1 { margin: 0 0 8px; }
+      .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 16px 0; }
+      label { display: block; margin: 8px 0 4px; font-weight: 600; }
+      input[type="text"], textarea { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+      button { padding: 8px 12px; border: 0; background: #2563eb; color: white; border-radius: 6px; cursor: pointer; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .muted { color: #6b7280; font-size: 12px; }
+      pre { background: #0b1021; color: #e5e7eb; padding: 12px; border-radius: 6px; overflow: auto; }
+      .error { color: #b91c1c; }
+      .success { color: #065f46; }
+    </style>
+  </head>
+  <body>
+    <h1>MP Online Cyber Café</h1>
+    <p class="muted">All-in-Python UI. Use the forms below to upload, OCR, prefill, chat, and start e-sign.</p>
+
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <div class="card">
+      <h2>1) Upload document</h2>
+      <form method="post" action="/ui/upload" enctype="multipart/form-data">
+        <label>Choose file (.pdf, .png, .jpg, .jpeg)</label>
+        <input name="file" type="file" accept=".pdf,.png,.jpg,.jpeg" required />
+        <div style="margin-top: 8px;">
+          <button type="submit">Upload</button>
+        </div>
+      </form>
+      {% if file_url %}
+        <p class="success">Uploaded URL: <a href="{{ file_url }}" target="_blank">{{ file_url }}</a></p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>2) OCR to text</h2>
+      <form method="post" action="/ui/ocr">
+        <label>Document URL</label>
+        <input name="file_url" type="text" value="{{ file_url }}" placeholder="https://..." required />
+        <div style="margin-top: 8px;">
+          <button type="submit">Run OCR</button>
+        </div>
+      </form>
+      <label>OCR Text</label>
+      <textarea rows="8" readonly>{{ ocr_text }}</textarea>
+    </div>
+
+    <div class="card">
+      <h2>3) Auto-fill form fields</h2>
+      <form method="post" action="/ui/prefill">
+        <input name="file_url" type="hidden" value="{{ file_url }}" />
+        <label>OCR Text</label>
+        <textarea name="ocr_text" rows="8">{{ ocr_text }}</textarea>
+        <label>Schema (JSON)</label>
+        <textarea name="schema_json" rows="6">{{ schema_json }}</textarea>
+        <div style="margin-top: 8px;">
+          <button type="submit">Run Prefill</button>
+        </div>
+      </form>
+      <label>Prefilled Fields</label>
+      <pre>{{ prefill_fields | tojson(indent=2) }}</pre>
+      <form method="post" action="/ui/esign">
+        <input name="file_url" type="hidden" value="{{ file_url }}" />
+        <input name="ocr_text" type="hidden" value="{{ ocr_text }}" />
+        <input name="schema_json" type="hidden" value='{{ schema_json }}' />
+        <input name="prefill_fields_json" type="hidden" value='{{ prefill_fields | tojson }}' />
+        <div style="margin-top: 8px;">
+          <button type="submit">Start e-Sign</button>
+        </div>
+      </form>
+      {% if signing_url %}
+        <p class="success">Signing URL: <a href="{{ signing_url }}" target="_blank">Open e-Sign</a></p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>4) Assistant</h2>
+      <form method="post" action="/ui/chat">
+        <label>Message</label>
+        <input name="chat_message" type="text" value="{{ chat_message }}" placeholder="Ask something..." />
+        <div style="margin-top: 8px;">
+          <button type="submit">Send</button>
+        </div>
+      </form>
+      <label>Reply</label>
+      <pre>{{ chat_reply }}</pre>
+    </div>
+  </body>
+  </html>
+
