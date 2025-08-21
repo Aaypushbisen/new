@@ -1,0 +1,44 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy service
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up --service mp-cybercafe-api --detach
+
+      - name: Configure environment variables (optional)
+        if: always()
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OCR_SPACE_API_KEY: ${{ secrets.OCR_SPACE_API_KEY }}
+          API_KEY: ${{ secrets.API_KEY }}
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+          ESIGN_PROVIDER: ${{ secrets.ESIGN_PROVIDER }}
+        run: |
+          # Set variables if provided
+          [ -n "$OPENAI_API_KEY" ] && railway variables set OPENAI_API_KEY="$OPENAI_API_KEY" || true
+          [ -n "$OCR_SPACE_API_KEY" ] && railway variables set OCR_SPACE_API_KEY="$OCR_SPACE_API_KEY" || true
+          [ -n "$API_KEY" ] && railway variables set API_KEY="$API_KEY" || true
+          [ -n "$ALLOWED_ORIGINS" ] && railway variables set ALLOWED_ORIGINS="$ALLOWED_ORIGINS" || true
+          [ -n "$ESIGN_PROVIDER" ] && railway variables set ESIGN_PROVIDER="$ESIGN_PROVIDER" || true
+
